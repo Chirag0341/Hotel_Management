@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f7fa;
+      color: #333;
+    }
+
+    .navbar {
+      background: #2b6777;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    h1, h2 {
+      margin-bottom: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab.active {
+      border-bottom: 3px solid #52ab98;
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .room-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .room-card {
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .room-card h3 {
+      margin: 0 0 0.5rem;
+    }
+
+    .room-card button {
+      padding: 0.5rem 1rem;
+      background: #52ab98;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 0.5rem;
+    }
+
+    .room-card button:hover {
+      background: #407d6b;
+    }
+
+    .room-card button.checkout {
+      background: #e74c3c;
+    }
+
+    .room-card button.checkout:hover {
+      background: #c0392b;
+    }
+
+    .room-card button.edit {
+      background: #3498db;
+    }
+
+    .room-card button.edit:hover {
+      background: #2980b9;
+    }
+
+    .form-container {
+      max-width: 400px;
+      margin: 3rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    input, select {
+      width: 100%;
+      margin: 0.5rem 0 1rem;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button[type="submit"], button.logout {
+      width: 100%;
+      background: #2b6777;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button[type="submit"]:hover, button.logout:hover {
+      background: #1a5566;
+    }
+
+    .dashboard {
+      text-align: center;
+      margin: 2rem 0;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .date-inputs {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .date-inputs > div {
+      flex: 1;
+    }
+
+    .booking-details {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .status-available {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-booked {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .flatpickr-calendar {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div>🏨 Hotel Management</div>
+    <div id="nav-user"></div>
+  </div>
+
+  <div class="container" id="main">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('available-rooms')">Available Rooms</div>
+      <div class="tab" id="booked-tab" onclick="switchTab('booked-rooms')" style="display: none;">Booked Rooms</div>
+      <div class="tab" id="all-tab" onclick="switchTab('all-rooms')" style="display: none;">All Rooms</div>
+    </div>
+
+    <div class="tab-content active" id="available-rooms">
+      <h1>Available Rooms</h1>
+      <div class="room-list" id="availableRoomList"></div>
+    </div>
+
+    <div class="tab-content" id="booked-rooms">
+      <h1>Booked Rooms</h1>
+      <div class="room-list" id="bookedRoomList"></div>
+    </div>
+
+    <div class="tab-content" id="all-rooms">
+      <h1>All Rooms</h1>
+      <div class="room-list" id="allRoomList"></div>
+    </div>
+  </div>
+
+  <div class="form-container" id="login" style="display: none;">
+    <h2>Login</h2>
+    <input type="text" id="login-username" placeholder="Username">
+    <input type="password" id="login-password" placeholder="Password">
+    <button onclick="loginUser()">Login</button>
+    <p>Don't have an account? <a href="#" onclick="toggleForms('register')">Register here</a></p>
+  </div>
+
+  <div class="form-container" id="register" style="display: none;">
+    <h2>Register</h2>
+    <input type="text" id="register-username" placeholder="Username">
+    <input type="password" id="register-password" placeholder="Password">
+    <select id="register-role">
+      <option value="customer">Customer</option>
+      <option value="owner">Owner</option>
+    </select>
+    <button onclick="registerUser()">Register</button>
+    <p>Already have an account? <a href="#" onclick="toggleForms('login')">Login here</a></p>
+  </div>
+
+  <div class="form-container" id="admin" style="display: none;">
+    <h2>Add Room (Admin)</h2>
+    <input type="number" id="room-number" placeholder="Room Number">
+    <select id="room-type">
+      <option value="single">Single</option>
+      <option value="double">Double</option>
+      <option value="suite">Suite</option>
+    </select>
+    <input type="number" id="room-price" placeholder="Price">
+    <button onclick="addRoom()">Add Room</button>
+  </div>
+
+  <div class="dashboard" id="dashboard" style="display: none;">
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal" id="bookingModal">
+    <div class="modal-content">
+      <h2>Book Room</h2>
+      <div class="date-inputs">
+        <div>
+          <label for="check-in">Check In:</label>
+          <input type="text" id="check-in" placeholder="Select date">
+        </div>
+        <div>
+          <label for="check-out">Check Out:</label>
+          <input type="text" id="check-out" placeholder="Select date">
+        </div>
+      </div>
+      <div class="booking-details" id="booking-summary"></div>
+      <button onclick="confirmBooking()" style="margin-top: 1rem;">Confirm Booking</button>
+      <button onclick="closeModal('bookingModal')" style="background: #6c757d; margin-top: 0.5rem;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Edit Price Modal -->
+  <div class="modal" id="editPriceModal">
+    <div class="modal-content">
+      <h2>Edit Room Price</h2>
+      <input type="number" id="new-price" placeholder="New Price">
+      <button onclick="confirmPriceChange()" style="margin-top: 1rem;">Update Price</button>
+      <button onclick="closeModal('editPriceModal')" style="background: #6c757d; margin-top: 0.5rem;">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+ // Remove mock backend and use actual API calls
+const token = localStorage.getItem('token');
+const role = localStorage.getItem('role');
+let selectedRoomId = null;
+let allRooms = [];
+let checkInPicker, checkOutPicker;
+
+function toggleForms(form) {
+  document.getElementById('login').style.display = form === 'login' ? 'block' : 'none';
+  document.getElementById('register').style.display = form === 'register' ? 'block' : 'none';
+}
+
+function showMainView() {
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'block';
+  
+  if (role === 'owner') {
+    document.getElementById('admin').style.display = 'block';
+    document.getElementById('booked-tab').style.display = 'block';
+    document.getElementById('all-tab').style.display = 'block';
+  } else if (role === 'customer') {
+    document.getElementById('booked-tab').style.display = 'block';
+  }
+}
+
+function switchTab(tabId) {
+  // Hide all tabs and contents
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  
+  // Show selected tab and content
+  document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  
+  // Load appropriate data
+  if (tabId === 'booked-rooms') {
+    fetchBookedRooms();
+  } else if (tabId === 'all-rooms' && role === 'owner') {
+    fetchAllRooms();
+  }
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('role');
+  location.reload();
+}
+
+function registerUser() {
+  const username = document.getElementById('register-username').value;
+  const password = document.getElementById('register-password').value;
+  const role = document.getElementById('register-role').value;
+
+  fetch('http://localhost:8000/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role })
+  }).then(res => res.json()).then(data => {
+    if (data.message === 'User created successfully') {
+      alert('Registration successful. Please login.');
+      toggleForms('login');
+    } else {
+      alert(data.message);
+    }
+  }).catch(error => {
+    console.error('Registration error:', error);
+    alert('Registration failed. Please try again.');
+  });
+}
+
+function loginUser() {
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+
+  fetch('http://localhost:8000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  }).then(res => res.json()).then(data => {
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('role', data.role);
+      location.reload();
+    } else {
+      alert('Login failed');
+    }
+  }).catch(error => {
+    console.error('Login error:', error);
+    alert('Login failed. Please try again.');
+  });
+}
+
+async function fetchAvailableRooms() {
+  try {
+    // Show loading message
+    const roomList = document.getElementById('availableRoomList');
+    roomList.innerHTML = '<p>Loading available rooms...</p>';
+    
+    // Fetch rooms from the actual API
+    const res = await fetch('http://localhost:8000/api/rooms/available');
+    const rooms = await res.json();
+    
+    roomList.innerHTML = '';
+    
+    if (!rooms || rooms.length === 0) {
+      roomList.innerHTML = '<p>No available rooms found.</p>';
+      return;
+    }
+    
+    // Save to allRooms for reference
+    allRooms = rooms;
+    
+    rooms.forEach(room => {
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      card.innerHTML = `
+        <h3>Room ${room.number}</h3>
+        <p>Type: ${room.type}</p>
+        <p>Price: $${room.price}</p>
+        <span class="status-badge status-available">Available</span>
+        <button onclick="openBookingModal('${room._id}')">Book Now</button>
+      `;
+      roomList.appendChild(card);
+    });
+  } catch (error) {
+    console.error('Error fetching available rooms:', error);
+    const roomList = document.getElementById('availableRoomList');
+    roomList.innerHTML = '<p>Error loading available rooms. Please try again later.</p>';
+  }
+}
+
+async function fetchBookedRooms() {
+  if (!token) {
+    console.log('No token available, user must be logged in');
+    return;
+  }
+  
+  try {
+    // Show loading message
+    const roomList = document.getElementById('bookedRoomList');
+    roomList.innerHTML = '<p>Loading booked rooms...</p>';
+    
+    const res = await fetch('http://localhost:8000/api/bookings/user', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    });
+    
+    const bookings = await res.json();
+    
+    roomList.innerHTML = '';
+    
+    if (!bookings || bookings.length === 0) {
+      roomList.innerHTML = '<p>No booked rooms found.</p>';
+      return;
+    }
+    
+    bookings.forEach(booking => {
+      const checkIn = new Date(booking.checkInDate).toLocaleDateString();
+      const checkOut = new Date(booking.checkOutDate).toLocaleDateString();
+      
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      card.innerHTML = `
+        <h3>Room ${booking.room ? booking.room.number : 'Unknown'}</h3>
+        <p>Type: ${booking.room ? booking.room.type : 'Unknown'}</p>
+        <p>Price: $${booking.room ? booking.room.price : 0}</p>
+        <p>Check In: ${checkIn}</p>
+        <p>Check Out: ${checkOut}</p>
+        <span class="status-badge status-booked">Booked</span>
+        <button class="checkout" onclick="checkoutRoom('${booking._id}')">Checkout</button>
+      `;
+      roomList.appendChild(card);
+    });
+  } catch (error) {
+    console.error('Error fetching booked rooms:', error);
+    const roomList = document.getElementById('bookedRoomList');
+    roomList.innerHTML = '<p>Error loading booked rooms. Please try again later.</p>';
+  }
+}
+
+async function fetchAllRooms() {
+  if (role !== 'owner' || !token) return;
+  
+  try {
+    // Show loading message
+    const roomList = document.getElementById('allRoomList');
+    roomList.innerHTML = '<p>Loading all rooms...</p>';
+    
+    // Fetch all rooms from MongoDB
+    const res = await fetch('http://localhost:8000/api/rooms/all', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    });
+    
+    const rooms = await res.json();
+    
+    // Store rooms for reference throughout the application
+    allRooms = rooms;
+
+    roomList.innerHTML = '';
+    
+    if (!rooms || rooms.length === 0) {
+      roomList.innerHTML = '<p>No rooms found.</p>';
+      return;
+    }
+    
+    rooms.forEach(room => {
+      const statusClass = room.isAvailable ? 'status-available' : 'status-booked';
+      const statusText = room.isAvailable ? 'Available' : 'Booked';
+      
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      card.innerHTML = `
+        <h3>Room ${room.number}</h3>
+        <p>Type: ${room.type}</p>
+        <p>Price: $${room.price}</p>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+        <button class="edit" onclick="openEditPriceModal('${room._id}')">Edit Price</button>
+        ${!room.isAvailable ? `<button class="checkout" onclick="adminCheckout('${room._id}')">Force Checkout</button>` : ''}
+      `;
+      roomList.appendChild(card);
+    });
+  } catch (error) {
+    console.error('Error fetching all rooms:', error);
+    const roomList = document.getElementById('allRoomList');
+    roomList.innerHTML = '<p>Error loading rooms. Please try again later.</p>';
+  }
+}
+
+function openBookingModal(roomId) {
+  if (!token) {
+    alert('You must be logged in to book a room');
+    toggleForms('login');
+    return;
+  }
+  
+  selectedRoomId = roomId;
+  
+  // Find the room details
+  const room = allRooms.find(r => r._id === roomId) || { price: 0 };
+  
+  // Initialize date pickers if not already
+  if (!checkInPicker) {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    
+    checkInPicker = flatpickr("#check-in", {
+      minDate: "today",
+      defaultDate: today,
+      onChange: updateBookingSummary
+    });
+    
+    checkOutPicker = flatpickr("#check-out", {
+      minDate: tomorrow,
+      defaultDate: tomorrow,
+      onChange: updateBookingSummary
+    });
+    
+    // Ensure check-out is always after check-in
+    document.getElementById('check-in').addEventListener('change', function() {
+      const checkInDate = checkInPicker.selectedDates[0];
+      const nextDay = new Date(checkInDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      checkOutPicker.set('minDate', nextDay);
+      if (checkOutPicker.selectedDates[0] <= checkInDate) {
+        checkOutPicker.setDate(nextDay);
+      }
+      updateBookingSummary();
+    });
+  }
+  
+  updateBookingSummary();
+  document.getElementById('bookingModal').style.display = 'flex';
+}
+
+function updateBookingSummary() {
+  const checkInDate = checkInPicker ? checkInPicker.selectedDates[0] : new Date();
+  const checkOutDate = checkOutPicker ? checkOutPicker.selectedDates[0] : new Date();
+  
+  // Calculate number of nights
+  const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+  
+  // Find room price
+  const room = allRooms.find(r => r._id === selectedRoomId);
+  const price = room ? room.price : 0;
+  
+  // Update summary
+  document.getElementById('booking-summary').innerHTML = `
+    <p><strong>Check In:</strong> ${checkInDate.toLocaleDateString()}</p>
+    <p><strong>Check Out:</strong> ${checkOutDate.toLocaleDateString()}</p>
+    <p><strong>Number of Nights:</strong> ${nights}</p>
+    <p><strong>Total Price:</strong> $${price * nights}</p>
+  `;
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+async function confirmBooking() {
+  if (!selectedRoomId || !token) return;
+  
+  try {
+    const checkInDate = checkInPicker.selectedDates[0].toISOString().split('T')[0];
+    const checkOutDate = checkOutPicker.selectedDates[0].toISOString().split('T')[0];
+    
+    const res = await fetch('http://localhost:8000/api/bookings/book', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ roomId: selectedRoomId, checkInDate, checkOutDate })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert('Room booked successfully!');
+      closeModal('bookingModal');
+      fetchAvailableRooms();
+      if (role === 'customer' || role === 'owner') {
+        fetchBookedRooms();
+      }
+      if (role === 'owner') {
+        fetchAllRooms();
+      }
+    } else {
+      alert(data.message || 'Failed to book room');
+    }
+  } catch (error) {
+    console.error('Error booking room:', error);
+    alert('Failed to book room. Please try again later.');
+  }
+}
+
+async function checkoutRoom(bookingId) {
+  if (!token) return;
+  
+  if (confirm('Are you sure you want to check out?')) {
+    try {
+      const res = await fetch(`http://localhost:8000/api/bookings/checkout/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('Checkout successful!');
+        fetchBookedRooms();
+        fetchAvailableRooms();
+        if (role === 'owner') {
+          fetchAllRooms();
+        }
+      } else {
+        alert(data.message || 'Failed to check out');
+      }
+    } catch (error) {
+      console.error('Error checking out:', error);
+      alert('Failed to check out. Please try again later.');
+    }
+  }
+}
+
+async function adminCheckout(roomId) {
+  if (role !== 'owner' || !token) return;
+  
+  if (confirm('Force checkout this room? This will remove the current booking.')) {
+    try {
+      const res = await fetch(`http://localhost:8000/api/rooms/force-checkout/${roomId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('Room checkout forced successfully!');
+        fetchAllRooms();
+        fetchAvailableRooms();
+        fetchBookedRooms();
+      } else {
+        alert(data.message || 'Failed to force checkout');
+      }
+    } catch (error) {
+      console.error('Error forcing checkout:', error);
+      alert('Failed to force checkout. Please try again later.');
+    }
+  }
+}
+
+function openEditPriceModal(roomId) {
+  if (role !== 'owner' || !token) return;
+  
+  selectedRoomId = roomId;
+  const room = allRooms.find(r => r._id === roomId);
+  
+  if (room) {
+    document.getElementById('new-price').value = room.price;
+    document.getElementById('editPriceModal').style.display = 'flex';
+  }
+}
+
+async function confirmPriceChange() {
+  if (role !== 'owner' || !selectedRoomId || !token) return;
+  
+  const newPrice = document.getElementById('new-price').value;
+  
+  if (!newPrice || isNaN(newPrice) || newPrice <= 0) {
+    alert('Please enter a valid price');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`http://localhost:8000/api/rooms/update-price/${selectedRoomId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ price: Number(newPrice) })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert('Price updated successfully!');
+      closeModal('editPriceModal');
+      fetchAllRooms();
+      fetchAvailableRooms();
+    } else {
+      alert(data.message || 'Failed to update price');
+    }
+  } catch (error) {
+    console.error('Error updating price:', error);
+    alert('Failed to update price. Please try again later.');
+  }
+}
+
+async function addRoom() {
+  if (role !== 'owner' || !token) return;
+  
+  const number = document.getElementById('room-number').value;
+  const type = document.getElementById('room-type').value;
+  const price = document.getElementById('room-price').value;
+
+  if (!number || !type || !price || isNaN(price) || price <= 0) {
+    alert('Please fill all fields with valid values');
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:8000/api/rooms/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ number, type, price: Number(price), isAvailable: true })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert('Room added successfully!');
+      document.getElementById('room-number').value = '';
+      document.getElementById('room-price').value = '';
+      fetchAvailableRooms();
+      if (role === 'owner') {
+        fetchAllRooms();
+      }
+    } else {
+      alert(data.message || 'Failed to add room');
+    }
+  } catch (error) {
+    console.error('Error adding room:', error);
+    alert('Failed to add room. Please try again later.');
+  }
+}
+
+// Initial render logic
+window.onload = function() {
+  if (!token) {
+    toggleForms('login');
+    document.getElementById('main').style.display = 'none';
+  } else {
+    document.getElementById('nav-user').innerText = role.toUpperCase();
+    showMainView();
+    fetchAvailableRooms();
+    
+    // Only fetch booked rooms if logged in
+    if (token) {
+      fetchBookedRooms();
+    }
+    
+    // Fetch all rooms if owner
+    if (role === 'owner' && token) {
+      fetchAllRooms();
+    }
+  }
+};
+  </script>
+</body>
+</html>
