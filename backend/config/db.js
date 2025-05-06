@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 let instance = null;
-
+console.log('MONGO_URI:', process.env.MONGO_URI);
 class Database {
   constructor() {
     if (!instance) {
